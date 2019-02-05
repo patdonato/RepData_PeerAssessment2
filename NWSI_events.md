@@ -27,23 +27,13 @@ output:
     }
 </style>
 
-```{r setup, include=FALSE, message=FALSE, warning=FALSE}
-library(knitr)
-library(tidyverse)
-library(kableExtra)
-library(lubridate)
-library(DescTools)
-library(readr)
-library(gridExtra)
 
-opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE,fig.pos='h')
-```
 
 ### **Data Preprocessing**
 
-```{r preprocess, results='hide',cache=TRUE}
 
-#=================================== INITIAL DATA CHECKING ======================================#
+```r
+#=================================== INITIAL DATA CHECKING =======================================#
 
 ## Load data
 storm <- read_csv("C:/Users/pdonato/Desktop/Coursera/RepData_PeerAssessment2/repdata_data_StormData.csv.bz2")
@@ -111,7 +101,8 @@ storm$TAG <- factor(storm$TAG,levels = c(top_events[1:7,],"Others"))
 ```
 
 ### **Inital Summary**
-```{r inital results}
+
+```r
 total <- storm %>%
   group_by(TAG) %>%
   summarise(tot_inc = n(), tot_fat = sum(FATALITIES), tot_inj = sum(INJURIES), tot_dmg = sum(PROPDMG + CROPDMG))
@@ -127,8 +118,80 @@ kable(total,
   row_spec(0, align = "c")
 ```
 
+<table class="table table-striped table-hover" style="font-size: 15px; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption style="font-size: initial !important;">Table 1. Health and Economic Damage based on Event Category</caption>
+ <thead>
+  <tr>
+   <th style="text-align:center;text-align: center;"> Events </th>
+   <th style="text-align:left;text-align: center;"> No. of Incidents </th>
+   <th style="text-align:left;text-align: center;"> No. of Fatalities </th>
+   <th style="text-align:left;text-align: center;"> No. of Injuries </th>
+   <th style="text-align:left;text-align: center;"> Total Economic Damage </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:center;"> Flood </td>
+   <td style="text-align:left;"> 82,723 </td>
+   <td style="text-align:left;"> 1,524 </td>
+   <td style="text-align:left;"> 8,604 </td>
+   <td style="text-align:left;"> $2,800,638 </td>
+  </tr>
+  <tr>
+   <td style="text-align:center;"> Wind </td>
+   <td style="text-align:left;"> 364,657 </td>
+   <td style="text-align:left;"> 1,433 </td>
+   <td style="text-align:left;"> 11,493 </td>
+   <td style="text-align:left;"> $3,357,566 </td>
+  </tr>
+  <tr>
+   <td style="text-align:center;"> Hail </td>
+   <td style="text-align:left;"> 289,276 </td>
+   <td style="text-align:left;"> 15 </td>
+   <td style="text-align:left;"> 1,371 </td>
+   <td style="text-align:left;"> $1,270,784 </td>
+  </tr>
+  <tr>
+   <td style="text-align:center;"> Snow </td>
+   <td style="text-align:left;"> 17,548 </td>
+   <td style="text-align:left;"> 163 </td>
+   <td style="text-align:left;"> 1,122 </td>
+   <td style="text-align:left;"> $154,180 </td>
+  </tr>
+  <tr>
+   <td style="text-align:center;"> Lightning </td>
+   <td style="text-align:left;"> 15,764 </td>
+   <td style="text-align:left;"> 817 </td>
+   <td style="text-align:left;"> 5,232 </td>
+   <td style="text-align:left;"> $607,005 </td>
+  </tr>
+  <tr>
+   <td style="text-align:center;"> Tornado </td>
+   <td style="text-align:left;"> 60,697 </td>
+   <td style="text-align:left;"> 5,636 </td>
+   <td style="text-align:left;"> 91,407 </td>
+   <td style="text-align:left;"> $3,315,774 </td>
+  </tr>
+  <tr>
+   <td style="text-align:center;"> Winter </td>
+   <td style="text-align:left;"> 19,595 </td>
+   <td style="text-align:left;"> 277 </td>
+   <td style="text-align:left;"> 1,876 </td>
+   <td style="text-align:left;"> $153,123 </td>
+  </tr>
+  <tr>
+   <td style="text-align:center;"> Others </td>
+   <td style="text-align:left;"> 52,037 </td>
+   <td style="text-align:left;"> 5,280 </td>
+   <td style="text-align:left;"> 19,423 </td>
+   <td style="text-align:left;"> $603,256 </td>
+  </tr>
+</tbody>
+</table>
+
 ### **Health Impact**
-```{r health impact}
+
+```r
 inj <- storm %>%
   group_by(TAG) %>%
   summarise(avg_inj = floor(sum(INJURIES)/n()*100)) %>%
@@ -199,8 +262,11 @@ fat_plot <- ggplot(fat2, aes(x=TAG,y=avg_fat)) +
 grid.arrange(inj_plot,fat_plot,ncol=1)
 ```
 
+![](NWSI_events_files/figure-html/health impact-1.png)<!-- -->
+
 ### **Economic Impact**
-```{r economic impact}
+
+```r
 # total <- storm %>%
 #   group_by(TAG) %>%
 #   summarise(tot_inc = n(), tot_fat = sum(FATALITIES), tot_inj = sum(INJURIES), tot_dmg = sum(PROPDMG + CROPDMG))
