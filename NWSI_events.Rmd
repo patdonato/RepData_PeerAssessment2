@@ -1,0 +1,144 @@
+---
+title: "storm_and_publichealth"
+author: "Patricia Rose Donato"
+output:
+    html_document:
+      fig_height: 10.5
+      fig_width: 12.5
+      fig.align: 'center'
+      toc: yes
+      toc_depth: 5
+      toc_float:
+        collapsed: no
+        smooth_scroll: no
+      keep_md: true
+    
+---
+
+<style type="text/css">
+    caption {
+      color: #303030;
+      font-size: 0.8em;
+      text-align: center;
+    } 
+    table{
+      border: 0.75px solid #303030;
+      font-size: 14px;
+    }
+</style>
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(tidyverse)
+library(kableExtra)
+library(lubridate)
+library(DescTools)
+
+opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE,fig.pos='h')
+```
+
+### **Data Preprocessing**
+
+```{r preprocess, results='hide'}
+library(readr)
+
+storm <- read_csv("C:/Users/pdonato/Desktop/Coursera/RepData_PeerAssessment2/repdata_data_StormData.csv.bz2")
+
+NWSI_events <- c("Astronomical Low Tide", "Avalanche", "Blizzard", "Coastal Flood", "Cold/Wind Chill", "Debris Flow", "Dense Fog", "Dense Smoke", "Drought", "Dust Devil", "Dust Storm", "Excessive Heat", "Extreme Cold/Wind Chill", "Flash Flood", "Flood", "Frost/Freeze", "Funnel Cloud", "Freezing Fog", "Hail", "Heat", "Heavy Rain", "Heavy Snow", "High Surf", "High Wind", "Hurricane", "Ice Storm", "Lake-Effect Snow", "Lakeshore Flood", "Lightning", "Marine Hail", "Marine High Wind", "Marine Strong Wind", "Marine Thunderstorm Wind", "Rip Current", "Seiche", "Sleet", "Storm Surge/Tide", "Strong Wind", "Thunderstorm Wind", "Tornado", "Tropical Depression", "Tropical Storm", "Tsunami", "Volcanic Ash", "Waterspout", "Wildfire", "Winter Storm", "Winter Weather")
+
+## Get list of unique words
+unique_words <- sapply(NWSI_events, function(x) {
+                       str_split(x,"/|\\s",simplify=TRUE)
+                    }
+             ) %>% 
+       unlist() %>%
+       as.character() %>%
+       unique() 
+## Manually remove adjectives
+unique_words <- unique_words[!unique_words %in% c("Astronomical","Low","Coastal","Cold","Dense","Excessive","Extreme","Heavy","Strong","High","Flash","Thunderstorm")]
+
+## For each unique word, count the number of times it appeared on EVTYPE
+## Note that for WINTER STORM, it will count 1 for Winter, and another 1 for Storm.
+## For FLOODING, it will count 1 for Flooding.
+## For WINDS, it will count 1 for Wind.
+word_freq <- sapply(unique_words, function(x) {
+                       str_count(toupper(storm$EVTYPE),paste0("\\b",toupper(x),"\\b","|",toupper(x),"(S|ING)"))
+                    }
+             ) %>%
+            colSums() %>%
+            as.data.frame() %>% 
+            rownames_to_column(var="event")
+
+
+# tmp <- sapply(unique_words, function(x) {
+#                        str_count(toupper(storm$EVTYPE),paste0("\\b",toupper(x),"\\b","|",toupper(x),"(S|ING)"))
+#                     }
+#              ) %>%
+#             as.data.frame() %>%
+#   mutate(EVENT = storm$EVTYPE)
+# 
+# 
+# tmp %>% filter(str_detect(EVENT,"ING")) %>% select(EVENT, Lightning, Flood,Hurricane)
+
+## Get the top 5 events by occurence
+top_events <- word_freq %>% top_n(7) %>% select(event)
+
+## Tag based on the top 5 events
+# storm <- storm %>%
+#   mutate(TAG = case_when(
+#                   str_detect(toupper(EVTYPE), toupper(top_events[1,])) ~ top_events[1,],
+#                   str_detect(toupper(EVTYPE), toupper(top_events[2,]))  ~ top_events[2,],
+#                   str_detect(toupper(EVTYPE), toupper(top_events[3,]))  ~ top_events[3,],
+#                   str_detect(toupper(EVTYPE), toupper(top_events[4,]))  ~ top_events[4,],
+#                   str_detect(toupper(EVTYPE), toupper(top_events[5,]))  ~ top_events[5,],
+#                   str_detect(toupper(EVTYPE), toupper(top_events[6,]))  ~ top_events[6,],
+#                   str_detect(toupper(EVTYPE), toupper(top_events[7,]))  ~ top_events[7,],
+#                   TRUE ~ "Others"
+#          )
+#   )
+
+storm <- storm %>%
+  mutate(TAG = case_when(
+                  str_detect(toupper(EVTYPE), 
+                             paste0("\\b",toupper(top_events[1,]),"\\b","|",toupper(top_events[1,]),"(S|ING)")) ~ top_events[1,],
+                  str_detect(toupper(EVTYPE), 
+                             paste0("\\b",toupper(top_events[2,]),"\\b","|",toupper(top_events[2,]),"(S|ING)"))  ~ top_events[2,],
+                  str_detect(toupper(EVTYPE), 
+                             paste0("\\b",toupper(top_events[3,]),"\\b","|",toupper(top_events[3,]),"(S|ING)"))  ~ top_events[3,],
+                  str_detect(toupper(EVTYPE), 
+                             paste0("\\b",toupper(top_events[4,]),"\\b","|",toupper(top_events[4,]),"(S|ING)"))  ~ top_events[4,],
+                  str_detect(toupper(EVTYPE), 
+                             paste0("\\b",toupper(top_events[5,]),"\\b","|",toupper(top_events[5,]),"(S|ING)"))  ~ top_events[5,],
+                  str_detect(toupper(EVTYPE),
+                             paste0("\\b",toupper(top_events[6,]),"\\b","|",toupper(top_events[6,]),"(S|ING)"))  ~ top_events[6,],
+                  str_detect(toupper(EVTYPE), 
+                             paste0("\\b",toupper(top_events[7,]),"\\b","|",toupper(top_events[7,]),"(S|ING)"))  ~ top_events[7,],
+                  TRUE ~ "Others"
+         )
+  )
+
+storm %>%
+  group_by(TAG) %>%
+  summarise(tot_inc = n(), tot_fat = sum(FATALITIES), tot_inj = sum(INJURIES))
+
+# dup_words <- dup_words[which(sapply(dup_words, length) > 1)]
+# dup_words$names
+# 
+# sapply(dup_words %>% unlist() %>% unique, function(x) {
+#   str_split(x," ",simplify=TRUE)
+# })
+# 
+# 
+# sapply(NWSI_events,function(x) str_split(x," ",simplify=TRUE)) %>% unlist() %>% unique()
+
+
+
+# data.frame(matrix(unlist(dup_words) %>% unique())) %>% rename_at(1,~"dup_words") %>% arrange(dup_words)
+# 
+# words <- c("AAAAAAAA", "TTTTTTTT", "AAAAAAGC", "AAAACCAA")
+# sapply(unique_words, function(x) unique_words[adist(x, unique_words) < 10])
+# 
+# 
+
+```
+
